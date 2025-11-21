@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zing Blog Generation Service</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .info-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 8px;
+            margin-bottom: 20px;
+        }
+
+        .badge-mode {
+            background: #3498db;
+            color: white;
+        }
+
+        .badge-env {
+            background: #2ecc71;
+            color: white;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #34495e;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .tenant-info {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 25px;
+            display: none;
+        }
+
+        .tenant-info.active {
+            display: block;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .info-label {
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+
+        .info-value {
+            color: #2c3e50;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.active {
+            display: block;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        .result-details {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .blog-list {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .blog-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .blog-item.success {
+            border-left: 3px solid #28a745;
+        }
+
+        .blog-item.failed {
+            border-left: 3px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Blog Generation Service</h1>
+        <p class="subtitle">Generate SEO-optimized blogs and publish to Duda</p>
+
+        <div>
+            <span class="info-badge badge-mode">Mode: {{ mode }}</span>
+            <span class="info-badge badge-env">Env: {{ environment }}</span>
+        </div>
+
+        <form id="generateForm">
+            <div class="form-group">
+                <label for="tenantSelect">Select Tenant:</label>
+                <select id="tenantSelect" name="tenant_id" required>
+                    <option value="">-- Choose a tenant --</option>
+                    {% for tenant_id in tenant_ids %}
+                    <option value="{{ tenant_id }}">{{ tenant_id }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div id="tenantInfo" class="tenant-info"></div>
+
+            <button type="submit" id="generateBtn">Generate & Send Blogs</button>
+        </form>
+
+        <div id="loading" class="loading">
+            <div class="spinner"></div>
+            <p>Generating blogs... This may take a few minutes.</p>
+        </div>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const tenantSelect = document.getElementById('tenantSelect');
+        const tenantInfo = document.getElementById('tenantInfo');
+        const generateForm = document.getElementById('generateForm');
+        const generateBtn = document.getElementById('generateBtn');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+
+        // Fetch and display tenant info when selected
+        tenantSelect.addEventListener('change', async (e) => {
+            const tenantId = e.target.value;
+
+            if (!tenantId) {
+                tenantInfo.classList.remove('active');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/tenants/${tenantId}`);
+                const data = await response.json();
+
+                tenantInfo.innerHTML = `
+                    <div class="info-row">
+                        <span class="info-label">Business:</span>
+                        <span class="info-value">${data.business_name}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Industry:</span>
+                        <span class="info-value">${data.industry}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Location:</span>
+                        <span class="info-value">${data.location}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Duda Site:</span>
+                        <span class="info-value">${data.duda_site_code}</span>
+                    </div>
+                `;
+                tenantInfo.classList.add('active');
+            } catch (error) {
+                console.error('Error fetching tenant info:', error);
+            }
+        });
+
+        // Handle form submission
+        generateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const tenantId = tenantSelect.value;
+            if (!tenantId) return;
+
+            // Show loading state
+            generateBtn.disabled = true;
+            loading.classList.add('active');
+            result.classList.remove('active');
+
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ tenant_id: tenantId })
+                });
+
+                const data = await response.json();
+
+                // Hide loading
+                loading.classList.remove('active');
+
+                // Show result
+                result.classList.add('active');
+
+                if (data.success) {
+                    result.className = 'result active success';
+                    let blogListHTML = '';
+
+                    if (data.details && data.details.length > 0) {
+                        blogListHTML = '<div class="blog-list">';
+                        data.details.forEach(blog => {
+                            const statusClass = blog.success ? 'success' : 'failed';
+                            const statusIcon = blog.success ? '✓' : '✗';
+                            blogListHTML += `
+                                <div class="blog-item ${statusClass}">
+                                    ${statusIcon} ${blog.title}
+                                </div>
+                            `;
+                        });
+                        blogListHTML += '</div>';
+                    }
+
+                    result.innerHTML = `
+                        <h3>✓ Success!</h3>
+                        <div class="result-details">
+                            <p><strong>Business:</strong> ${data.business_name}</p>
+                            <p><strong>Blogs Generated:</strong> ${data.blogs_generated}</p>
+                            <p><strong>Blogs Sent to Duda:</strong> ${data.blogs_sent_to_duda}</p>
+                            ${blogListHTML}
+                        </div>
+                    `;
+                } else {
+                    result.className = 'result active error';
+                    const errorList = data.errors.length > 0
+                        ? '<ul>' + data.errors.map(err => `<li>${err}</li>`).join('') + '</ul>'
+                        : '';
+
+                    result.innerHTML = `
+                        <h3>✗ Generation Failed</h3>
+                        <div class="result-details">
+                            <p>${data.message}</p>
+                            ${errorList}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                loading.classList.remove('active');
+                result.classList.add('active');
+                result.className = 'result active error';
+                result.innerHTML = `
+                    <h3>✗ Error</h3>
+                    <div class="result-details">
+                        <p>An error occurred: ${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                generateBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

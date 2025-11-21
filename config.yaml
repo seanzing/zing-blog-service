@@ -1,0 +1,39 @@
+# Blog Generation Service Configuration
+# This file can be modified by non-engineers to adjust blog generation settings
+
+blog_generation:
+  # OpenAI model to use for blog generation
+  model: "gpt-4"
+
+  # Temperature controls creativity (0.0 = focused, 1.0 = creative)
+  temperature: 0.7
+
+  # Word count range for each blog post
+  word_count_min: 1300
+  word_count_max: 1600
+
+  # Writing tone for blog posts
+  tone: "professional"
+
+  # Number of blog posts to generate per request
+  number_of_blogs: 1
+
+  # SEO guidelines to include in blog generation
+  seo_guidelines:
+    - "Use relevant keywords naturally throughout the content"
+    - "Include headers (H2, H3) for better structure"
+    - "Write compelling meta descriptions"
+    - "Use internal and external links where appropriate"
+    - "Optimize for featured snippets with concise answers"
+    - "No fabricated statistics or specific study citations"
+    - "Include primary keyword + 3–5 supporting keywords"
+    - "No reused paragraphs, wording, intros, or conclusions across blogs"
+    - "Each post must have a distinct angle, audience, or scenario" 
+
+deployment:
+  # Mode: "local" uses hardcoded API credentials, "production" uses Duda Integration Service
+  mode: "local"
+
+  # Service configuration
+  host: "0.0.0.0"
+  port: 8000
