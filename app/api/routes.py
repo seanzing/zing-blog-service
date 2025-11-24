@@ -16,6 +16,7 @@ from app.config import get_tenant_data, get_all_tenant_ids, app_config, settings
 from app.services.blog_generator import BlogGenerator
 from app.services.html_formatter import HTMLFormatter
 from app.services.duda_client import DudaClient
+from app.services.pexels_client import PexelsClient
 
 # Initialize router
 router = APIRouter()
@@ -27,6 +28,7 @@ templates = Jinja2Templates(directory="app/templates")
 blog_generator = BlogGenerator()
 html_formatter = HTMLFormatter()
 duda_client = DudaClient()
+pexels_client = PexelsClient()
 
 
 @router.get("/", response_class=HTMLResponse)
@@ -125,11 +127,30 @@ async def generate_blogs(request: GenerationRequest):
         # Step 2: Format and send to Duda
         print(f"Formatting and sending blogs to Duda (mode: {app_config.mode})...")
         blog_payloads = []
+        used_images = set()  # Track images used in this batch to avoid duplicates
 
-        for blog in generated_blogs:
+        for i, blog in enumerate(generated_blogs, 1):
             try:
-                # Format for Duda API
-                payload = html_formatter.prepare_blog_for_duda(blog, business_name)
+                # Fetch featured image from Pexels
+                image_url = None
+                if app_config.pexels_enabled:
+                    try:
+                        print(f"Fetching image for blog {i}: '{blog.get('title', 'Unknown')}'...")
+                        image_url = await pexels_client.search_image(
+                            industry,
+                            blog.get('title', ''),
+                            used_images
+                        )
+                        if image_url:
+                            print(f"✓ Image found for blog {i}")
+                            used_images.add(image_url)  # Track this image as used
+                        else:
+                            print(f"⚠ No image found for blog {i}, continuing without image")
+                    except Exception as img_error:
+                        print(f"⚠ Image fetch failed for blog {i}: {str(img_error)}, continuing without image")
+
+                # Format for Duda API (with or without image)
+                payload = html_formatter.prepare_blog_for_duda(blog, business_name, image_url)
                 blog_payloads.append(payload)
             except Exception as e:
                 error_msg = f"Failed to format blog '{blog.get('title', 'Unknown')}': {str(e)}"

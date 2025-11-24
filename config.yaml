@@ -16,7 +16,7 @@ blog_generation:
   tone: "professional"
 
   # Number of blog posts to generate per request
-  number_of_blogs: 1
+  number_of_blogs: 3
 
   # SEO guidelines to include in blog generation
   seo_guidelines:
@@ -28,7 +28,20 @@ blog_generation:
     - "No fabricated statistics or specific study citations"
     - "Include primary keyword + 3–5 supporting keywords"
     - "No reused paragraphs, wording, intros, or conclusions across blogs"
-    - "Each post must have a distinct angle, audience, or scenario" 
+    - "Each post must have a distinct angle, audience, or scenario"
+
+pexels:
+  # Enable/disable Pexels image integration
+  enabled: true
+
+  # Image orientation preference
+  orientation: landscape
+
+  # Fallback search query if primary query fails
+  fallback_query: "business professional"
+
+  # Number of results to fetch per search (for deduplication)
+  per_page: 15
 
 deployment:
   # Mode: "local" uses hardcoded API credentials, "production" uses Duda Integration Service

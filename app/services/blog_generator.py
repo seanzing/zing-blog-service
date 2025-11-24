@@ -40,6 +40,26 @@ class BlogGenerator:
         """
         seo_guidelines_text = "\n".join([f"- {guideline}" for guideline in self.config.seo_guidelines])
 
+        # Define diverse angles to ensure variety across all blogs
+        angle_strategies = [
+            "Target homeowners/residential customers with beginner-friendly how-to content",
+            "Target small business owners with practical guides and best practices",
+            "Create a comprehensive listicle (Top 5/10/7 tips or strategies)",
+            "Focus on troubleshooting common problems and solutions",
+            "Address frequently asked questions in Q&A format",
+            "Compare different options or approaches (comparison guide)",
+            "Explain technical concepts in simple terms for non-experts",
+            "Discuss seasonal or timely considerations",
+            "Focus on cost-saving tips and budget considerations",
+            "Highlight signs/indicators that customers need professional help",
+            "Discuss latest trends or innovations in the industry",
+            "Create a beginner's guide or 101-style introduction"
+        ]
+
+        # Rotate through angles based on blog number
+        angle_index = (blog_number - 1) % len(angle_strategies)
+        specific_angle = angle_strategies[angle_index]
+
         prompt = f"""You are a professional blog writer creating high-quality, SEO-optimized content for {business_name},
 a {industry} business located in {location}.
 
@@ -50,8 +70,23 @@ REQUIREMENTS:
 - Tone: {self.config.tone}
 - Industry focus: {industry}
 - Location relevance: {location}
-- Each blog must cover a DIFFERENT topic relevant to the {industry} industry
+- Each blog MUST cover a COMPLETELY DIFFERENT topic and angle from others in the series
 - Topics should be highly relevant and valuable to potential customers searching for {industry} services in {location}
+
+DIVERSITY REQUIREMENTS (CRITICAL):
+This blog should use the following angle/approach:
+"{specific_angle}"
+
+Ensure this blog has a DISTINCT:
+- Target audience (vary between homeowners, businesses, beginners, experts)
+- Content format (how-to, listicle, problem-solution, Q&A, comparison, guide)
+- Focus area (different aspect of {industry} services)
+- Pain point or need being addressed
+
+AVOID:
+- Repeating topics from other blogs in this series
+- Generic content that could apply to any business
+- Duplicate angles, introductions, or conclusions
 
 SEO GUIDELINES:
 {seo_guidelines_text}
@@ -64,7 +99,7 @@ FORMAT YOUR RESPONSE AS JSON with exactly these fields:
 }}
 
 Make this blog unique, engaging, and valuable for readers searching for {industry} services in {location}.
-Focus on topics that demonstrate expertise and help potential customers make informed decisions."""
+Follow the specified angle/approach to ensure maximum diversity across all blog posts."""
 
         return prompt
 

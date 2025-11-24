@@ -39,14 +39,20 @@ class HTMLFormatter:
             color: #34495e;
             margin-top: 30px;
             margin-bottom: 15px;
+            font-weight: bold;
         }}
         h3 {{
             color: #555;
             margin-top: 20px;
             margin-bottom: 10px;
+            font-weight: bold;
+        }}
+        h4 {{
+            font-weight: bold;
         }}
         p {{
             margin: 15px 0;
+            font-weight: normal;
         }}
         ul, ol {{
             margin: 15px 0;
@@ -118,13 +124,14 @@ class HTMLFormatter:
 </item>"""
         return rss_item
 
-    def prepare_blog_for_duda(self, blog_data: Dict[str, str], author: str) -> Dict[str, str]:
+    def prepare_blog_for_duda(self, blog_data: Dict[str, str], author: str, image_url: str = None) -> Dict[str, str]:
         """
         Prepare a blog post for Duda API submission.
 
         Args:
             blog_data: Dictionary with 'title', 'description', 'content' from OpenAI
             author: Author name (business name)
+            image_url: Optional featured image URL from Pexels
 
         Returns:
             Dictionary formatted for Duda API payload
@@ -135,10 +142,17 @@ class HTMLFormatter:
         # Encode to base64
         encoded_content = self.encode_to_base64(html_content)
 
-        # Return in Duda API format
-        return {
+        # Build base payload
+        payload = {
             "title": blog_data['title'],
             "description": blog_data['description'],
             "content": encoded_content,
             "author": author
         }
+
+        # Add image fields if image URL is provided
+        if image_url:
+            payload["thumbnail"] = {"url": image_url}
+            payload["main_image"] = {"url": image_url}
+
+        return payload

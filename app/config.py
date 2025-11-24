@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     openai_api_key: str
     duda_api_user: str = ""
     duda_api_password: str = ""
+    pexels_api_key: str = ""
     environment: str = "development"
 
     class Config:
@@ -41,6 +42,13 @@ class AppConfig:
         self.tone = blog_config.get('tone', 'professional')
         self.number_of_blogs = blog_config.get('number_of_blogs', 12)
         self.seo_guidelines = blog_config.get('seo_guidelines', [])
+
+        # Pexels settings
+        pexels_config = config.get('pexels', {})
+        self.pexels_enabled = pexels_config.get('enabled', True)
+        self.pexels_orientation = pexels_config.get('orientation', 'landscape')
+        self.pexels_fallback_query = pexels_config.get('fallback_query', 'business professional')
+        self.pexels_per_page = pexels_config.get('per_page', 1)
 
         # Deployment settings
         deployment_config = config.get('deployment', {})
