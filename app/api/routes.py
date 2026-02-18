@@ -292,6 +292,7 @@ async def generate_blogs_direct(request: DirectGenerationRequest):
         print(f"Starting blog generation for: {business_name}")
         print(f"Industry: {industry} | Location: {location}")
         print(f"Duda Site: {duda_site_code}")
+        print(f"Num Blogs: {request.num_blogs}")
         print(f"{'='*60}\n")
 
         errors = []
@@ -300,12 +301,14 @@ async def generate_blogs_direct(request: DirectGenerationRequest):
         send_details = []
 
         # Step 1: Generate blogs
-        print(f"Generating {app_config.number_of_blogs} blogs using {app_config.model}...")
+        num_blogs = request.num_blogs
+        print(f"Generating {num_blogs} blogs using {app_config.model}...")
         try:
             generated_blogs = blog_generator.generate_multiple_blogs(
                 business_name=business_name,
                 industry=industry,
-                location=location
+                location=location,
+                count=num_blogs
             )
             blogs_generated = len(generated_blogs)
             print(f"✓ Successfully generated {blogs_generated} blogs\n")

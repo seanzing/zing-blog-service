@@ -32,6 +32,7 @@ class DirectGenerationRequest(BaseModel):
     industry: str = Field(..., description="Business industry/category")
     location: str = Field(..., description="Business location (city, state)")
     duda_site_code: str = Field(..., description="Duda website site code")
+    num_blogs: int = Field(12, ge=1, le=50, description="Number of blogs to generate")
 
 
 class GenerationStatus(BaseModel):
