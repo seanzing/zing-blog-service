@@ -71,3 +71,8 @@ htmlcov/
 
 # Logs
 logs/
+
+# Data files and reports
+*.csv
+onboarding_results.txt
+onboarding_validation_report.txt

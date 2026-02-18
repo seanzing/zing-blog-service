@@ -30,10 +30,32 @@
             width: 100%;
         }
 
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
         h1 {
             color: #2c3e50;
-            margin-bottom: 10px;
             font-size: 28px;
+        }
+
+        .logout-btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #c0392b;
         }
 
         .subtitle {
@@ -63,7 +85,7 @@
         }
 
         .form-group {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
         }
 
         label {
@@ -74,51 +96,32 @@
             font-size: 14px;
         }
 
-        select {
+        select, input[type="text"] {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 16px;
             background: white;
-            cursor: pointer;
             transition: border-color 0.3s;
         }
 
-        select:focus {
+        select {
+            cursor: pointer;
+        }
+
+        select:focus, input[type="text"]:focus {
             outline: none;
             border-color: #667eea;
         }
 
-        .tenant-info {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 25px;
-            display: none;
+        .help-text {
+            font-size: 12px;
+            color: #95a5a6;
+            margin-top: 4px;
         }
 
-        .tenant-info.active {
-            display: block;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-
-        .info-label {
-            color: #7f8c8d;
-            font-weight: 600;
-        }
-
-        .info-value {
-            color: #2c3e50;
-        }
-
-        button {
+        button[type="submit"] {
             width: 100%;
             padding: 14px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -131,12 +134,12 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        button:hover:not(:disabled) {
+        button[type="submit"]:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
         }
 
-        button:disabled {
+        button[type="submit"]:disabled {
             background: #bdc3c7;
             cursor: not-allowed;
         }
@@ -224,7 +227,12 @@
 </head>
 <body>
     <div class="container">
-        <h1>🚀 Blog Generation Service</h1>
+        <div class="header">
+            <h1>Blog Generation Service</h1>
+            {% if auth_enabled %}
+            <a href="/logout" class="logout-btn">Logout</a>
+            {% endif %}
+        </div>
         <p class="subtitle">Generate SEO-optimized blogs and publish to Duda</p>
 
         <div>
@@ -232,21 +240,38 @@
             <span class="info-badge badge-env">Env: {{ environment }}</span>
         </div>
 
-        <form id="generateForm">
-            <div class="form-group">
-                <label for="tenantSelect">Select Tenant:</label>
-                <select id="tenantSelect" name="tenant_id" required>
-                    <option value="">-- Choose a tenant --</option>
-                    {% for tenant_id in tenant_ids %}
-                    <option value="{{ tenant_id }}">{{ tenant_id }}</option>
-                    {% endfor %}
-                </select>
-            </div>
+        <!-- Header -->
+        <h2 style="color: #34495e; font-size: 18px; margin-bottom: 20px;">New Blogs</h2>
 
-            <div id="tenantInfo" class="tenant-info"></div>
+        <!-- Blog Generation Form -->
+        <div id="directTab">
+            <form id="directForm">
+                <div class="form-group">
+                    <label for="businessName">Business Name</label>
+                    <input type="text" id="businessName" name="business_name" required placeholder="e.g., Acme Plumbing Co">
+                </div>
 
-            <button type="submit" id="generateBtn">Generate & Send Blogs</button>
-        </form>
+                <div class="form-group">
+                    <label for="industry">Industry</label>
+                    <input type="text" id="industry" name="industry" required placeholder="e.g., Plumbing Services">
+                    <p class="help-text">Be specific - this affects blog topics and images</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" name="location" required placeholder="e.g., Denver, Colorado">
+                    <p class="help-text">City and state for local SEO</p>
+                </div>
+
+                <div class="form-group">
+                    <label for="dudaSiteCode">Duda Site Code</label>
+                    <input type="text" id="dudaSiteCode" name="duda_site_code" required placeholder="e.g., abc123de">
+                    <p class="help-text">Found in Duda dashboard URL or site settings</p>
+                </div>
+
+                <button type="submit" id="directBtn">Generate & Send Blogs</button>
+            </form>
+        </div>
 
         <div id="loading" class="loading">
             <div class="spinner"></div>
@@ -257,134 +282,103 @@
     </div>
 
     <script>
-        const tenantSelect = document.getElementById('tenantSelect');
-        const tenantInfo = document.getElementById('tenantInfo');
-        const generateForm = document.getElementById('generateForm');
-        const generateBtn = document.getElementById('generateBtn');
+        // Elements
+        const directForm = document.getElementById('directForm');
         const loading = document.getElementById('loading');
         const result = document.getElementById('result');
 
-        // Fetch and display tenant info when selected
-        tenantSelect.addEventListener('change', async (e) => {
-            const tenantId = e.target.value;
+        // Handle result display
+        function displayResult(data) {
+            loading.classList.remove('active');
+            result.classList.add('active');
 
-            if (!tenantId) {
-                tenantInfo.classList.remove('active');
-                return;
-            }
+            if (data.success) {
+                result.className = 'result active success';
+                let blogListHTML = '';
 
-            try {
-                const response = await fetch(`/tenants/${tenantId}`);
-                const data = await response.json();
+                if (data.details && data.details.length > 0) {
+                    blogListHTML = '<div class="blog-list">';
+                    data.details.forEach(blog => {
+                        const statusClass = blog.success ? 'success' : 'failed';
+                        const statusIcon = blog.success ? '✓' : '✗';
+                        blogListHTML += `
+                            <div class="blog-item ${statusClass}">
+                                ${statusIcon} ${blog.title}
+                            </div>
+                        `;
+                    });
+                    blogListHTML += '</div>';
+                }
 
-                tenantInfo.innerHTML = `
-                    <div class="info-row">
-                        <span class="info-label">Business:</span>
-                        <span class="info-value">${data.business_name}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Industry:</span>
-                        <span class="info-value">${data.industry}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Location:</span>
-                        <span class="info-value">${data.location}</span>
-                    </div>
-                    <div class="info-row">
-                        <span class="info-label">Duda Site:</span>
-                        <span class="info-value">${data.duda_site_code}</span>
+                result.innerHTML = `
+                    <h3>✓ Success!</h3>
+                    <div class="result-details">
+                        <p><strong>Business:</strong> ${data.business_name}</p>
+                        <p><strong>Blogs Generated:</strong> ${data.blogs_generated}</p>
+                        <p><strong>Blogs Sent to Duda:</strong> ${data.blogs_sent_to_duda}</p>
+                        ${blogListHTML}
                     </div>
                 `;
-                tenantInfo.classList.add('active');
-            } catch (error) {
-                console.error('Error fetching tenant info:', error);
-            }
-        });
+            } else {
+                result.className = 'result active error';
+                const errorList = data.errors && data.errors.length > 0
+                    ? '<ul>' + data.errors.map(err => `<li>${err}</li>`).join('') + '</ul>'
+                    : '';
 
-        // Handle form submission
-        generateForm.addEventListener('submit', async (e) => {
+                result.innerHTML = `
+                    <h3>✗ Generation Failed</h3>
+                    <div class="result-details">
+                        <p>${data.message || 'An error occurred'}</p>
+                        ${errorList}
+                    </div>
+                `;
+            }
+        }
+
+        function displayError(error) {
+            loading.classList.remove('active');
+            result.classList.add('active');
+            result.className = 'result active error';
+            result.innerHTML = `
+                <h3>✗ Error</h3>
+                <div class="result-details">
+                    <p>An error occurred: ${error.message}</p>
+                </div>
+            `;
+        }
+
+        // Handle direct form submission
+        directForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            const tenantId = tenantSelect.value;
-            if (!tenantId) return;
-
-            // Show loading state
-            generateBtn.disabled = true;
+            const directBtn = document.getElementById('directBtn');
+            directBtn.disabled = true;
             loading.classList.add('active');
             result.classList.remove('active');
 
             try {
-                const response = await fetch('/generate', {
+                const response = await fetch('/generate/direct', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ tenant_id: tenantId })
+                    body: JSON.stringify({
+                        business_name: document.getElementById('businessName').value,
+                        industry: document.getElementById('industry').value,
+                        location: document.getElementById('location').value,
+                        duda_site_code: document.getElementById('dudaSiteCode').value
+                    })
                 });
 
                 const data = await response.json();
-
-                // Hide loading
-                loading.classList.remove('active');
-
-                // Show result
-                result.classList.add('active');
-
-                if (data.success) {
-                    result.className = 'result active success';
-                    let blogListHTML = '';
-
-                    if (data.details && data.details.length > 0) {
-                        blogListHTML = '<div class="blog-list">';
-                        data.details.forEach(blog => {
-                            const statusClass = blog.success ? 'success' : 'failed';
-                            const statusIcon = blog.success ? '✓' : '✗';
-                            blogListHTML += `
-                                <div class="blog-item ${statusClass}">
-                                    ${statusIcon} ${blog.title}
-                                </div>
-                            `;
-                        });
-                        blogListHTML += '</div>';
-                    }
-
-                    result.innerHTML = `
-                        <h3>✓ Success!</h3>
-                        <div class="result-details">
-                            <p><strong>Business:</strong> ${data.business_name}</p>
-                            <p><strong>Blogs Generated:</strong> ${data.blogs_generated}</p>
-                            <p><strong>Blogs Sent to Duda:</strong> ${data.blogs_sent_to_duda}</p>
-                            ${blogListHTML}
-                        </div>
-                    `;
-                } else {
-                    result.className = 'result active error';
-                    const errorList = data.errors.length > 0
-                        ? '<ul>' + data.errors.map(err => `<li>${err}</li>`).join('') + '</ul>'
-                        : '';
-
-                    result.innerHTML = `
-                        <h3>✗ Generation Failed</h3>
-                        <div class="result-details">
-                            <p>${data.message}</p>
-                            ${errorList}
-                        </div>
-                    `;
-                }
+                displayResult(data);
             } catch (error) {
-                loading.classList.remove('active');
-                result.classList.add('active');
-                result.className = 'result active error';
-                result.innerHTML = `
-                    <h3>✗ Error</h3>
-                    <div class="result-details">
-                        <p>An error occurred: ${error.message}</p>
-                    </div>
-                `;
+                displayError(error);
             } finally {
-                generateBtn.disabled = false;
+                directBtn.disabled = false;
             }
         });
+
     </script>
 </body>
 </html>

@@ -57,10 +57,12 @@ class DudaClient:
             # Raise exception for bad status codes
             response.raise_for_status()
 
+            response_data = response.json() if response.text else {}
             return {
                 "success": True,
                 "status_code": response.status_code,
-                "response": response.json() if response.text else {}
+                "post_id": response_data.get("id"),
+                "response": response_data
             }
 
     async def send_blog_to_duda_production(self, site_name: str, blog_payload: Dict[str, str]) -> Dict:
@@ -178,3 +180,139 @@ class DudaClient:
         except Exception as e:
             print(f"Connection test failed: {str(e)}")
             return False
+
+    async def get_blog_posts(self, site_name: str) -> Dict:
+        """
+        Get all blog posts for a site.
+
+        Args:
+            site_name: Duda site code
+
+        Returns:
+            Dictionary with success status and list of posts
+        """
+        try:
+            if self.mode == "local":
+                headers = self._get_auth_header()
+                endpoint = f"{self.base_url}/sites/multiscreen/{site_name}/blog/posts"
+
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    response = await client.get(endpoint, headers=headers)
+                    response.raise_for_status()
+
+                    posts = response.json()
+                    return {
+                        "success": True,
+                        "posts": posts if isinstance(posts, list) else posts.get("results", [])
+                    }
+            else:
+                return {"success": False, "error": "Not implemented for production mode"}
+
+        except httpx.HTTPStatusError as e:
+            return {
+                "success": False,
+                "posts": [],
+                "error": f"HTTP {e.response.status_code}: {str(e)}"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "posts": [],
+                "error": str(e)
+            }
+
+    async def publish_blog_post(self, site_name: str, post_id: str) -> Dict:
+        """
+        Publish a blog post that was created as a draft.
+
+        Args:
+            site_name: Duda site code
+            post_id: The blog post ID returned from import
+
+        Returns:
+            Dictionary with success status
+        """
+        try:
+            if self.mode == "local":
+                headers = self._get_auth_header()
+                endpoint = f"{self.base_url}/sites/multiscreen/{site_name}/blog/posts/{post_id}/publish"
+
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    response = await client.post(endpoint, headers=headers)
+                    response.raise_for_status()
+
+                    return {
+                        "success": True,
+                        "post_id": post_id,
+                        "status_code": response.status_code
+                    }
+            else:
+                # Production mode - would call integration service
+                return {"success": True, "post_id": post_id}
+
+        except httpx.HTTPStatusError as e:
+            return {
+                "success": False,
+                "post_id": post_id,
+                "error": f"HTTP {e.response.status_code}: {str(e)}"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "post_id": post_id,
+                "error": str(e)
+            }
+
+    async def get_site_status(self, site_name: str) -> Dict:
+        """
+        Get the publication status of a Duda site.
+
+        Args:
+            site_name: Duda site code
+
+        Returns:
+            Dictionary with site status info including 'is_published'
+        """
+        try:
+            if self.mode == "local":
+                headers = self._get_auth_header()
+                endpoint = f"{self.base_url}/sites/multiscreen/{site_name}"
+
+                async with httpx.AsyncClient(timeout=15.0) as client:
+                    response = await client.get(endpoint, headers=headers)
+                    response.raise_for_status()
+
+                    site_data = response.json()
+                    # Duda returns 'publish_status' field: 'PUBLISHED', 'UNPUBLISHED', etc.
+                    publish_status = site_data.get('publish_status', 'UNKNOWN')
+
+                    return {
+                        "success": True,
+                        "site_name": site_name,
+                        "is_published": publish_status == "PUBLISHED",
+                        "publish_status": publish_status,
+                        "site_data": site_data
+                    }
+            else:
+                # Production mode - assume published for now
+                return {
+                    "success": True,
+                    "site_name": site_name,
+                    "is_published": True,
+                    "publish_status": "ASSUMED_PUBLISHED"
+                }
+
+        except httpx.HTTPStatusError as e:
+            return {
+                "success": False,
+                "site_name": site_name,
+                "is_published": False,
+                "error": f"HTTP {e.response.status_code}: {str(e)}"
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "site_name": site_name,
+                "is_published": False,
+                "error": str(e)
+            }

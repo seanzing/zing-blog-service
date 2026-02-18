@@ -1,4 +1,5 @@
 """Configuration management for the blog generation service."""
+import os
 import yaml
 from pathlib import Path
 from pydantic_settings import BaseSettings
@@ -12,6 +13,7 @@ class Settings(BaseSettings):
     duda_api_password: str = ""
     pexels_api_key: str = ""
     environment: str = "development"
+    app_password: str = ""  # Simple password protection for team access
 
     class Config:
         env_file = ".env"
@@ -21,7 +23,9 @@ class Settings(BaseSettings):
 class AppConfig:
     """Application configuration from YAML file."""
 
-    def __init__(self, config_path: str = "config.yaml"):
+    def __init__(self, config_path: str = None):
+        if config_path is None:
+            config_path = Path(__file__).parent.parent / "config.yaml"
         self.config_path = Path(config_path)
         self._load_config()
 
@@ -54,7 +58,7 @@ class AppConfig:
         deployment_config = config.get('deployment', {})
         self.mode = deployment_config.get('mode', 'local')
         self.host = deployment_config.get('host', '0.0.0.0')
-        self.port = deployment_config.get('port', 8000)
+        self.port = int(os.environ.get("PORT", deployment_config.get('port', 8000)))
 
     def reload(self):
         """Reload configuration from file."""

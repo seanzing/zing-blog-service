@@ -26,6 +26,14 @@ class GenerationRequest(BaseModel):
     tenant_id: str = Field(..., description="ID of the tenant to generate blogs for")
 
 
+class DirectGenerationRequest(BaseModel):
+    """Request to generate blogs with direct business details."""
+    business_name: str = Field(..., description="Name of the business")
+    industry: str = Field(..., description="Business industry/category")
+    location: str = Field(..., description="Business location (city, state)")
+    duda_site_code: str = Field(..., description="Duda website site code")
+
+
 class GenerationStatus(BaseModel):
     """Status of a blog generation request."""
     tenant_id: str

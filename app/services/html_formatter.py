@@ -124,7 +124,12 @@ class HTMLFormatter:
 </item>"""
         return rss_item
 
-    def prepare_blog_for_duda(self, blog_data: Dict[str, str], author: str, image_url: str = None) -> Dict[str, str]:
+    def prepare_blog_for_duda(
+        self,
+        blog_data: Dict[str, str],
+        author: str,
+        image_url: str = None
+    ) -> Dict[str, str]:
         """
         Prepare a blog post for Duda API submission.
 
@@ -142,7 +147,7 @@ class HTMLFormatter:
         # Encode to base64
         encoded_content = self.encode_to_base64(html_content)
 
-        # Build base payload
+        # Build base payload (blogs are created as drafts, published separately)
         payload = {
             "title": blog_data['title'],
             "description": blog_data['description'],

@@ -16,7 +16,7 @@ blog_generation:
   tone: "professional"
 
   # Number of blog posts to generate per request
-  number_of_blogs: 3
+  number_of_blogs: 1
 
   # SEO guidelines to include in blog generation
   seo_guidelines:
@@ -31,7 +31,7 @@ blog_generation:
     - "Each post must have a distinct angle, audience, or scenario"
 
 pexels:
-  # Enable/disable Pexels image integration
+  # Enable/disable Pexels image integrati1on
   enabled: true
 
   # Image orientation preference
