@@ -1,6 +1,7 @@
 """OpenAI blog generation service."""
 from openai import OpenAI
 from typing import List, Dict
+from datetime import date
 import json
 from app.config import settings, app_config
 
@@ -60,8 +61,16 @@ class BlogGenerator:
         angle_index = (blog_number - 1) % len(angle_strategies)
         specific_angle = angle_strategies[angle_index]
 
+        current_date = date.today().strftime("%B %Y")  # e.g. "March 2026"
+        current_year = date.today().year
+
         prompt = f"""You are a professional blog writer creating high-quality, SEO-optimized content for {business_name},
 a {industry} business located in {location}.
+
+IMPORTANT: Today's date is {current_date}. All content must be current and relevant to {current_year}.
+- Do NOT reference past years (e.g. "2023 trends" or "2024 guide") as if they are current
+- When discussing trends, tips, or developments, frame them as relevant to {current_year} and beyond
+- Avoid date-stamped titles like "Top Tips for [old year]" — use evergreen framing or reference {current_year}
 
 Generate blog post #{blog_number} of 12 total blogs for this business.
 
@@ -128,7 +137,7 @@ Follow the specified angle/approach to ensure maximum diversity across all blog 
             response = self.client.chat.completions.create(
                 model=model,
                 messages=[
-                    {"role": "system", "content": "You are an expert blog writer specializing in local business content and SEO."},
+                    {"role": "system", "content": f"You are an expert blog writer specializing in local business content and SEO. Today's date is {date.today().strftime('%B %Y')}. All content you produce must be timely and relevant to {date.today().year}."},
                     {"role": "user", "content": prompt}
                 ],
                 temperature=self.config.temperature,
