@@ -31,26 +31,36 @@ def find_csv_file():
 
 async def main():
     parser = argparse.ArgumentParser(description="Publish one more draft blog per customer site")
-    parser.add_argument("--csv", type=str, help="Path to CSV file")
+    parser.add_argument("--csv", type=str, nargs="+", help="Path to CSV file(s)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be published without doing it")
     parser.add_argument("--process", action="store_true", help="Actually publish one draft per site")
     parser.add_argument("--limit", type=int, help="Limit number of customers to process")
     args = parser.parse_args()
 
-    csv_path = args.csv or find_csv_file()
-    if not csv_path or not Path(csv_path).exists():
-        print(f"Error: CSV file not found: {csv_path}")
+    csv_paths = args.csv or [find_csv_file()]
+    csv_paths = [p for p in csv_paths if p and Path(p).exists()]
+    if not csv_paths:
+        print("Error: No CSV files found")
         sys.exit(1)
 
-    print(f"Using CSV file: {csv_path}")
-
-    valid_customers, flagged_customers = parse_onboarding_csv(csv_path)
+    valid_customers = []
+    total_flagged = 0
+    seen_sites = set()
+    for csv_path in csv_paths:
+        print(f"Using CSV file: {csv_path}")
+        valid, flagged = parse_onboarding_csv(csv_path)
+        for c in valid:
+            if c.duda_site_code not in seen_sites:
+                seen_sites.add(c.duda_site_code)
+                valid_customers.append(c)
+        total_flagged += len(flagged)
+    flagged_customers = total_flagged
 
     if args.limit:
         valid_customers = valid_customers[:args.limit]
 
     print(f"Valid customers: {len(valid_customers)}")
-    print(f"Flagged (skipped): {len(flagged_customers)}")
+    print(f"Flagged (skipped): {flagged_customers}")
 
     if not args.dry_run and not args.process:
         print("\nCustomers whose sites will get one draft published:")

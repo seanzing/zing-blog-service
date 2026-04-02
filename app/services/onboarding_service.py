@@ -95,6 +95,15 @@ class OnboardingService:
         result.site_is_published = site_status.get('is_published', False)
         print(f"Site published: {result.site_is_published}")
 
+        # Fetch site theme colors for blog styling
+        print("Fetching site theme colors...")
+        theme_result = await self.duda_client.get_site_theme(customer.duda_site_code)
+        theme_colors = theme_result.get("colors") if theme_result.get("success") else None
+        if theme_colors:
+            print(f"Found {len(theme_colors)} theme colors")
+        else:
+            print("No theme colors found, using defaults")
+
         # Step 2: Generate blogs
         print(f"\nGenerating {customer.blog_count} blogs...")
         try:
@@ -147,7 +156,8 @@ class OnboardingService:
                 payload = self.html_formatter.prepare_blog_for_duda(
                     blog,
                     customer.business_name,
-                    image_url
+                    image_url,
+                    theme_colors
                 )
                 blog_payloads.append(payload)
 

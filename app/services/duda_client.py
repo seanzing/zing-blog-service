@@ -263,6 +263,35 @@ class DudaClient:
                 "error": str(e)
             }
 
+    async def get_site_theme(self, site_name: str) -> Dict:
+        """
+        Get the theme colors for a Duda site.
+
+        Args:
+            site_name: Duda site code
+
+        Returns:
+            Dictionary with color palette from the site's theme
+        """
+        try:
+            headers = self._get_auth_header()
+            endpoint = f"{self.base_url}/sites/multiscreen/{site_name}/theme"
+
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                response = await client.get(endpoint, headers=headers)
+                response.raise_for_status()
+
+                data = response.json()
+                colors = [
+                    {"id": c["id"], "label": c.get("label", ""), "value": c["value"]}
+                    for c in data.get("colors", [])
+                    if c.get("value")
+                ]
+                return {"success": True, "colors": colors}
+
+        except Exception as e:
+            return {"success": False, "colors": [], "error": str(e)}
+
     async def get_site_status(self, site_name: str) -> Dict:
         """
         Get the publication status of a Duda site.
