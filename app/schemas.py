@@ -35,6 +35,29 @@ class DirectGenerationRequest(BaseModel):
     num_blogs: int = Field(12, ge=1, le=60, description="Number of blogs to generate")
 
 
+class JobEnqueueResponse(BaseModel):
+    """Response returned immediately when an async generation job is enqueued."""
+    job_id: str
+    status: str  # "queued"
+    business_name: str
+    num_blogs: int
+
+
+class JobStatusResponse(BaseModel):
+    """Status of an async generation job (returned by the polling endpoint)."""
+    job_id: str
+    status: str  # "queued", "generating", "sending", "completed", "failed"
+    business_name: str
+    num_blogs: int
+    blogs_generated: int
+    blogs_sent_to_duda: int
+    success: bool
+    message: str
+    errors: List[str] = []
+    started_at: str
+    completed_at: Optional[str] = None
+
+
 class GenerationStatus(BaseModel):
     """Status of a blog generation request."""
     tenant_id: str
